@@ -62,8 +62,8 @@ __global__ void mandelbrot_kernel(
     const double scale,
     const int maxIter
 ) {
-    const int x = blockIdx.x * blockDim.x + threadIdx.x;
-    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x >= width || y >= height) return;
 
@@ -79,7 +79,7 @@ __global__ void mandelbrot_kernel(
         iter++;
     }
 
-    const int idx = (y * width + x) * 4;
+    unsigned const int idx = (y * width + x) * 4;
     color_pixel(iter, maxIter, zx, zy, &pixels[idx]);
 }
 

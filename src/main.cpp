@@ -5,10 +5,11 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <cstring>
+
+int baseIter = 500;
 
 int getMaxIter(const double scale) {
-    constexpr int baseIter = 500;
-
     return static_cast<int>(baseIter + 50 * std::log10(3.0 / scale));
 }
 
@@ -86,7 +87,19 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
     centerY += relY * (1.0 - factor);
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    // Parse command-line arguments
+    for (int i = 1; i < argc; i++) {
+        if ((strcmp(argv[i], "--iterations") == 0 || strcmp(argv[i], "-i") == 0) && i + 1 < argc) {
+            baseIter = std::atoi(argv[++i]);
+            if (baseIter <= 0) {
+                std::cerr << "Invalid iteration count. Using default (500).\n";
+                baseIter = 500;
+            }
+        }
+    }
+    std::cout << "Base iterations: " << baseIter << "\n";
+
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
