@@ -2,6 +2,17 @@
 #include <cmath>
 #include <cstdint>
 
+/**
+ * @brief Colors a pixel based on the number of iterations and the final Z value.
+ *
+ * Uses a smooth coloring algorithm to determine the RGB values.
+ *
+ * @param iter The number of iterations reached.
+ * @param maxIter The maximum number of iterations allowed.
+ * @param zx The real part of the final Z value.
+ * @param zy The imaginary part of the final Z value.
+ * @param pixel Pointer to the pixel's RGBA values.
+ */
 __device__ void color_pixel(
     const int iter,
     const int maxIter,
@@ -53,6 +64,19 @@ __device__ void color_pixel(
     pixel[3] = 255;
 }
 
+/**
+ * @brief CUDA kernel to compute the Mandelbrot set.
+ *
+ * Computes the Mandelbrot set for a given region and stores the result in the pixels array.
+ *
+ * @param pixels Pointer to the output pixel array (RGBA).
+ * @param width Width of the image.
+ * @param height Height of the image.
+ * @param centerX X coordinate of the center of the view.
+ * @param centerY Y coordinate of the center of the view.
+ * @param scale Scale of the view (width in complex plane units).
+ * @param maxIter Maximum number of iterations.
+ */
 __global__ void mandelbrot_kernel(
     uint8_t *pixels,
     const int width,
@@ -84,6 +108,19 @@ __global__ void mandelbrot_kernel(
     color_pixel(iter, maxIter, zx, zy, &pixels[idx]);
 }
 
+/**
+ * @brief Host wrapper to launch the Mandelbrot CUDA kernel.
+ *
+ * Configures the grid and block dimensions and launches the kernel.
+ *
+ * @param pixels_d Device pointer to the pixel array.
+ * @param width Width of the image.
+ * @param height Height of the image.
+ * @param centerX X coordinate of the center of the view.
+ * @param centerY Y coordinate of the center of the view.
+ * @param scale Scale of the view.
+ * @param maxIter Maximum number of iterations.
+ */
 void mandelbrot_cuda(
     uint8_t *pixels_d,
     const int width,

@@ -9,7 +9,7 @@
 
 int baseIter = 500;
 
-enum class FractalType { MANDELBROT, JULIA };
+enum class FractalType { MANDELBROT, JULIA, BURNING_SHIP };
 
 auto fractalType = FractalType::MANDELBROT;
 
@@ -36,6 +36,9 @@ void mandelbrot_cuda(uint8_t *pixels_d, int width, int height,
 void julia_cuda(uint8_t *pixels_d, int width, int height,
                 double centerX, double centerY, double scale, int maxIter,
                 double juliaRe, double juliaIm);
+
+void burningship_cuda(uint8_t *pixels_d, int width, int height,
+                      double centerX, double centerY, double scale, int maxIter);
 
 // OpenGL stuff
 auto vertexShaderSrc = R"(
@@ -84,19 +87,19 @@ GLuint createProgram(const char *vsSrc, const char *fsSrc) {
 }
 
 // zoom handler
-void scroll_callback(GLFWwindow *window, double xoffset, double yoffset) {
+void scroll_callback(GLFWwindow *window, const double x_offset, const double y_offset) {
     double mx, my;
     glfwGetCursorPos(window, &mx, &my);
     const double relX = (mx - WIDTH / 2.0) * scale / WIDTH;
     const double relY = (-my + HEIGHT / 2.0) * scale / WIDTH;
-    if (yoffset > 0) scale *= 0.8;
+    if (y_offset > 0) scale *= 0.8;
     else scale *= 1.25;
-    const double factor = (yoffset > 0) ? 0.8 : 1.25;
+    const double factor = (y_offset > 0) ? 0.8 : 1.25;
     centerX += relX * (1.0 - factor);
     centerY += relY * (1.0 - factor);
 }
 
-int main(int argc, char *argv[]) {
+int main(const int argc, char *argv[]) {
     // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
         if ((strcmp(argv[i], "--iterations") == 0 || strcmp(argv[i], "-i") == 0) && i + 1 < argc) {
@@ -110,20 +113,35 @@ int main(int argc, char *argv[]) {
                 fractalType = FractalType::JULIA;
             } else if (strcmp(type, "mandelbrot") == 0) {
                 fractalType = FractalType::MANDELBROT;
+            } else if (strcmp(type, "burningship") == 0) {
+                fractalType = FractalType::BURNING_SHIP;
             } else {
                 std::cerr << "Unknown fractal type. Using mandelbrot.\n";
             }
         }
     }
     std::cout << "Base iterations: " << baseIter << "\n";
-    std::cout << "Fractal type: " << (fractalType == FractalType::JULIA ? "Julia" : "Mandelbrot") << "\n";
+    std::cout << "Fractal type: ";
+    switch (fractalType) {
+        case FractalType::JULIA: std::cout << "Julia";
+            break;
+        case FractalType::MANDELBROT: std::cout << "Mandelbrot";
+            break;
+        case FractalType::BURNING_SHIP: std::cout << "Burning Ship";
+            break;
+    }
+    std::cout << "\n";
 
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
 
-    const char *windowTitle = (fractalType == FractalType::JULIA) ? "Julia CUDA" : "Mandelbrot CUDA";
+    const char *windowTitle = "Fractal CUDA";
+    if (fractalType == FractalType::JULIA) windowTitle = "Julia CUDA";
+    else if (fractalType == FractalType::MANDELBROT) windowTitle = "Mandelbrot CUDA";
+    else if (fractalType == FractalType::BURNING_SHIP) windowTitle = "Burning Ship CUDA";
+
     GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, windowTitle, nullptr, nullptr);
     if (!window) {
         std::cerr << "Failed to create window\n";
@@ -181,6 +199,8 @@ int main(int argc, char *argv[]) {
 
         if (fractalType == FractalType::JULIA) {
             julia_cuda(d_pixels, WIDTH, HEIGHT, centerX, centerY, scale, MAX_ITER, juliaRe, juliaIm);
+        } else if (fractalType == FractalType::BURNING_SHIP) {
+            burningship_cuda(d_pixels, WIDTH, HEIGHT, centerX, centerY, scale, MAX_ITER);
         } else {
             mandelbrot_cuda(d_pixels, WIDTH, HEIGHT, centerX, centerY, scale, MAX_ITER);
         }

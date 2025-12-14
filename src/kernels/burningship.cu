@@ -2,12 +2,8 @@
 #include <cmath>
 #include <cstdint>
 
-// https://en.wikipedia.org/wiki/Julia_set
-
 /**
- * @brief Colors a pixel for the Julia set based on iterations and Z value.
- *
- * Uses a smooth coloring algorithm.
+ * @brief Colors a pixel for the Burning Ship fractal.
  *
  * @param iter Number of iterations.
  * @param maxIter Maximum iterations.
@@ -15,7 +11,7 @@
  * @param zy Imaginary part of Z.
  * @param pixel Pointer to pixel RGBA.
  */
-__device__ void color_pixel_julia(
+__device__ void color_pixel_burningship(
     const int iter,
     const int maxIter,
     const double zx,
@@ -26,7 +22,6 @@ __device__ void color_pixel_julia(
         pixel[0] = pixel[1] = pixel[2] = 0;
     } else {
         const double smooth = iter - log2(log2(zx * zx + zy * zy));
-
         const double hue = 360.0 * smooth / maxIter;
         const double c = hue / 360.0 * 6.0;
         const double x1 = c - floor(c);
@@ -67,7 +62,7 @@ __device__ void color_pixel_julia(
 }
 
 /**
- * @brief CUDA kernel to compute the Julia set.
+ * @brief CUDA kernel to compute the Burning Ship fractal.
  *
  * @param pixels Output pixel array.
  * @param width Image width.
@@ -76,44 +71,44 @@ __device__ void color_pixel_julia(
  * @param centerY Center Y coordinate.
  * @param scale View scale.
  * @param maxIter Maximum iterations.
- * @param juliaRe Real part of the Julia constant C.
- * @param juliaIm Imaginary part of the Julia constant C.
  */
-__global__ void julia_kernel(
+__global__ void burningship_kernel(
     uint8_t *pixels,
     const int width,
     const int height,
     const double centerX,
     const double centerY,
     const double scale,
-    const int maxIter,
-    const double juliaRe,
-    const double juliaIm
+    const int maxIter
 ) {
     unsigned const int x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x >= width || y >= height) return;
 
-    double zx = centerX + (x - width / 2.0) * scale / width;
-    double zy = centerY + (y - height / 2.0) * scale / width;
 
+    const double cx = centerX + (x - width / 2.0) * scale / width;
+    const double cy = centerY + (y - height / 2.0) * scale / width;
+
+    double zx = 0.0, zy = 0.0;
     int iter = 0;
 
     while (zx * zx + zy * zy <= 4.0 && iter < maxIter) {
-        const double tmp = zx * zx - zy * zy + juliaRe;
-        zy = 2.0 * zx * zy + juliaIm;
+        const double zx_abs = fabs(zx);
+        const double zy_abs = fabs(zy);
+
+        const double tmp = zx_abs * zx_abs - zy_abs * zy_abs + cx;
+        zy = 2.0 * zx_abs * zy_abs + cy;
         zx = tmp;
         iter++;
     }
 
     unsigned const int idx = (y * width + x) * 4;
-
-    color_pixel_julia(iter, maxIter, zx, zy, &pixels[idx]);
+    color_pixel_burningship(iter, maxIter, zx, zy, &pixels[idx]);
 }
 
 /**
- * @brief Host wrapper to launch the Julia set CUDA kernel.
+ * @brief Host wrapper to launch the Burning Ship CUDA kernel.
  *
  * @param pixels_d Device pointer to pixels.
  * @param width Image width.
@@ -122,24 +117,20 @@ __global__ void julia_kernel(
  * @param centerY Center Y.
  * @param scale Scale.
  * @param maxIter Max iterations.
- * @param juliaRe Julia constant real part.
- * @param juliaIm Julia constant imaginary part.
  */
-void julia_cuda(
+void burningship_cuda(
     uint8_t *pixels_d,
     const int width,
     const int height,
     const double centerX,
     const double centerY,
     const double scale,
-    const int maxIter,
-    const double juliaRe,
-    const double juliaIm
+    const int maxIter
 ) {
     dim3 block(16, 16);
     dim3 grid((width + block.x - 1) / block.x, (height + block.y - 1) / block.y);
 
-    julia_kernel<<<grid, block>>>(pixels_d, width, height, centerX, centerY, scale, maxIter, juliaRe, juliaIm);
+    burningship_kernel<<<grid, block>>>(pixels_d, width, height, centerX, centerY, scale, maxIter);
 
     cudaDeviceSynchronize();
 }

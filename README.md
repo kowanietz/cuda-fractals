@@ -18,9 +18,17 @@ Renders fractals such as the Mandelbrot and Julia sets in an interactive window 
 
 ### Julia Set
 
-![Julia.png](static/julia.png)
+![Julia](static/julia.png)
 
-![Julia 2.png](static/julia2.png)
+![Julia 2](static/julia2.png)
+
+### Burning Ship Fractal
+
+(This one definitely needs more work)
+
+![Burning Ship 2](static/burning_ship2.png)
+
+![Burning Ship](static/burning_ship.png)
 
 ## Usage
 
@@ -28,9 +36,14 @@ Renders fractals such as the Mandelbrot and Julia sets in an interactive window 
 ./run.sh
 
 Options:
-  -i, --iterations <iterations>     [int]                 (Default 500)
-  -f, --fractal <fractal>           [mandelbrot/julia]    (Default mandelbrot)
-  
+  -i, --iterations <iterations>     (Default 500)
+  -f, --fractal <fractal>           (Default mandelbrot)
+
+Fractal types: 
+    mandelbrot
+    julia
+    burning_ship
+
 Example:
 
 ./run.sh -f julia -i 1000

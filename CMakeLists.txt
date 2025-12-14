@@ -16,6 +16,7 @@ set(SOURCES
         src/utils/glad.cpp
         src/kernels/mandelbrot.cu
         src/kernels/julia.cu
+        src/kernels/burningship.cu
 )
 
 add_executable(fractal ${SOURCES})
